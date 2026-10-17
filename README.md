@@ -1,6 +1,6 @@
 # BT Print — impression Bluetooth ESC/POS (type RawBT)
 
-Application Android (Kotlin, **Android 12 minimum**, minSdk 31) qui imprime sur des imprimantes thermiques
+Application Android (Kotlin, **Android 8 minimum**, minSdk 26) qui imprime sur des imprimantes thermiques
 Bluetooth ESC/POS (Xprinter, Goojprt, MTP, Sunmi externes, etc.) depuis :
 
 - la fenêtre **Imprimer** d'Android (Chrome, lecteurs PDF, Odoo dans le navigateur) via un
@@ -19,7 +19,7 @@ Librairie d'impression : [DantSu/ESCPOS-ThermalPrinter-Android](https://github.c
 2. *File → Open* → dossier `BtPrint`.
 3. Laisser Gradle synchroniser (télécharge AGP, Compose, DantSu via JitPack, NanoHTTPD).
    Si Android Studio propose de mettre à jour AGP / Kotlin / Compose BOM, vous pouvez accepter.
-4. Brancher un téléphone Android 12+ et lancer *Run*.
+4. Brancher un téléphone Android 8+ et lancer *Run*.
 
 ### APK de production (signé)
 

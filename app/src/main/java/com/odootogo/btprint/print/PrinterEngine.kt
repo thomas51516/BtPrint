@@ -1,10 +1,8 @@
 package com.odootogo.btprint.print
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import com.dantsu.escposprinter.EscPosCharsetEncoding
 import com.dantsu.escposprinter.EscPosPrinter
@@ -59,9 +57,7 @@ class PrinterEngine(private val context: Context) {
 
     @SuppressLint("MissingPermission") // vérifié juste en dessous
     private fun openConnection(): BluetoothConnection {
-        if (context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            throw PrintException("Permission Bluetooth non accordée")
-        }
+        if (!BluetoothPermissions.granted(context)) throw PrintException("Permission Bluetooth non accordée")
         val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter
             ?: throw PrintException("Bluetooth non disponible sur cet appareil")
         if (!adapter.isEnabled) throw PrintException("Le Bluetooth est désactivé")

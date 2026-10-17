@@ -13,10 +13,10 @@ android {
 
     defaultConfig {
         applicationId = "com.odootogo.btprint"
-        minSdk = 31          // Android 12 minimum (permissions Bluetooth modernes)
+        minSdk = 26          // Android 8 minimum
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
     }
 
     // Signature de release : lue dans keystore.properties (hors dépôt, voir README § 1).

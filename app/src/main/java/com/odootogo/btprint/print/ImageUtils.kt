@@ -2,6 +2,7 @@ package com.odootogo.btprint.print
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ImageDecoder
@@ -9,7 +10,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
-import java.nio.ByteBuffer
+import android.os.Build
 import kotlin.math.max
 import kotlin.math.min
 
@@ -17,13 +18,14 @@ object ImageUtils {
 
     /** Décode une image (content://, file://) en bitmap logiciel lisible pixel par pixel. */
     fun decode(context: Context, uri: Uri): Bitmap =
-        ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, _, _ ->
-            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-        }
-
-    fun decode(bytes: ByteArray): Bitmap =
-        ImageDecoder.decodeBitmap(ImageDecoder.createSource(ByteBuffer.wrap(bytes))) { decoder, _, _ ->
-            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, _, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        } else {
+            // Android 8 / 8.1 : BitmapFactory produit déjà un bitmap logiciel
+            context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+                ?: throw PrintException("Image illisible")
         }
 
     /** Redimensionne à la largeur de la tête d'impression, sur fond blanc (gère la transparence). */

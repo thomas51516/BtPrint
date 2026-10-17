@@ -1,14 +1,13 @@
 package com.odootogo.btprint.ui
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
+import com.odootogo.btprint.print.BluetoothPermissions
 import com.odootogo.btprint.print.Payloads
 import com.odootogo.btprint.print.PrintJob
 import com.odootogo.btprint.print.PrintQueue
@@ -31,7 +30,7 @@ class ShareReceiverActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+        if (!BluetoothPermissions.granted(this)) {
             toast("Ouvrez BT Print pour autoriser le Bluetooth")
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             finish()

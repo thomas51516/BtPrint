@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import com.odootogo.btprint.R
@@ -73,11 +74,12 @@ class PrintService : Service() {
 
         // startForeground doit être appelé après chaque startForegroundService()
         try {
-            startForeground(
-                NOTIFICATION_ID,
-                buildNotification(PrintQueue.status.value),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-            )
+            val notification = buildNotification(PrintQueue.status.value)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+            } else {
+                startForeground(NOTIFICATION_ID, notification) // pas de type avant Android 10
+            }
         } catch (e: Exception) {
             // Typiquement : permission BLUETOOTH_CONNECT non accordée
             Log.e(TAG, "Impossible de passer au premier plan", e)

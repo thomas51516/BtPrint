@@ -5,6 +5,14 @@
         android:name="android.hardware.bluetooth"
         android:required="true" />
 
+    <!-- Bluetooth avant Android 12 : permissions accordées à l'installation. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
     <!-- Bluetooth (Android 12+) : connexion aux imprimantes appairées.
          SCAN est demandé car la librairie appelle cancelDiscovery() avant de se connecter. -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />

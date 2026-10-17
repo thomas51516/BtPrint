@@ -8,7 +8,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -39,6 +38,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import com.odootogo.btprint.data.PaperWidth
 import com.odootogo.btprint.data.PrinterCharset
 import com.odootogo.btprint.data.PrinterSettings
+import com.odootogo.btprint.print.BluetoothPermissions
 import com.odootogo.btprint.print.PrintJob
 import com.odootogo.btprint.print.PrintQueue
 import com.odootogo.btprint.print.TestReceipts
@@ -68,7 +69,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val settings = PrinterSettings(this)
         setContent {
-            MaterialTheme(colorScheme = dynamicLightColorScheme(this)) {
+            // Couleurs dynamiques (Material You) à partir d'Android 12 seulement
+            val colors = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) dynamicLightColorScheme(this)
+            else lightColorScheme()
+            MaterialTheme(colorScheme = colors) {
                 MainScreen(settings)
             }
         }
@@ -78,16 +82,12 @@ class MainActivity : ComponentActivity() {
 private data class PairedPrinter(val name: String, val address: String)
 
 private val REQUIRED_PERMISSIONS = buildList {
-    add(Manifest.permission.BLUETOOTH_CONNECT)
-    add(Manifest.permission.BLUETOOTH_SCAN)
+    addAll(BluetoothPermissions.runtime)           // Android 12+
     // Permission d'exécution uniquement depuis Android 13
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
 }.toTypedArray()
 
-private fun hasBluetoothPermissions(context: Context) =
-    listOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN).all {
-        context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
-    }
+private fun hasBluetoothPermissions(context: Context) = BluetoothPermissions.granted(context)
 
 @SuppressLint("MissingPermission") // appelé uniquement si la permission est accordée
 private fun pairedPrinters(adapter: BluetoothAdapter?): List<PairedPrinter> =
@@ -127,7 +127,7 @@ private fun MainScreen(settings: PrinterSettings) {
     }
 
     LaunchedEffect(Unit) {
-        if (!hasPerms) permissionLauncher.launch(REQUIRED_PERMISSIONS)
+        if (!hasPerms && REQUIRED_PERMISSIONS.isNotEmpty()) permissionLauncher.launch(REQUIRED_PERMISSIONS)
     }
     // Démarre le service (serveur local) dès que tout est prêt
     LaunchedEffect(hasPerms, serverEnabled) {
