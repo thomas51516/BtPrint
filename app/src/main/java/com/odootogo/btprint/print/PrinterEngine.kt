@@ -26,33 +26,33 @@ class PrinterEngine(private val context: Context) {
     /** Sérialisé : la file et le service d'impression système partagent la même imprimante. */
     fun print(job: PrintJob) = synchronized(PRINT_LOCK) {
         when (job) {
-            is PrintJob.FormattedText -> withPrinter { printer ->
+            is PrintJob.FormattedText -> withPrinter { printer, _ ->
                 if (settings.autoCut) printer.printFormattedTextAndCut(job.text, FEED_MM)
                 else printer.printFormattedText(job.text, FEED_MM)
             }
 
             is PrintJob.Raw -> printRaw(job.bytes)
 
-            is PrintJob.Image -> withPrinter { printer ->
+            is PrintJob.Image -> withPrinter { printer, commands ->
                 printBitmap(printer, job.bitmap)
-                finish(printer)
+                finish(commands)
             }
 
             is PrintJob.ImageFile -> {
                 val bitmap = ImageUtils.decode(context, job.uri)
-                withPrinter { printer ->
+                withPrinter { printer, commands ->
                     printBitmap(printer, bitmap)
-                    finish(printer)
+                    finish(commands)
                 }
             }
 
-            is PrintJob.PdfFile -> withPrinter { printer ->
+            is PrintJob.PdfFile -> withPrinter { printer, commands ->
                 // Rendu suréchantillonné : après rognage des marges, le contenu est remis à la
                 // largeur de tête ; partir d'une image plus fine évite un texte flou.
                 ImageUtils.renderPdfPages(context, job.uri, printer.printerWidthPx * PDF_OVERSAMPLE) { page ->
                     printBitmap(printer, ImageUtils.trim(page, margin = 8 * PDF_OVERSAMPLE))
                 }
-                finish(printer)
+                finish(commands)
             }
         }
     }
@@ -81,18 +81,19 @@ class PrinterEngine(private val context: Context) {
     }
 
     /** Ouvre la connexion, exécute [block], puis ferme toujours la connexion. */
-    private inline fun withPrinter(block: (EscPosPrinter) -> Unit) {
+    private inline fun withPrinter(block: (EscPosPrinter, Commands) -> Unit) {
         val paper = settings.paperWidth
+        val commands = Commands(openConnection(), charsetEncoding())
         val printer = try {
             // Le constructeur établit la connexion Bluetooth
-            EscPosPrinter(Commands(openConnection(), charsetEncoding()), PRINTER_DPI, paper.widthMm, paper.charsPerLine)
+            EscPosPrinter(commands, PRINTER_DPI, paper.widthMm, paper.charsPerLine)
         } catch (e: PrintException) {
             throw e
         } catch (e: Exception) {
             throw PrintException("Connexion impossible : ${e.message ?: "imprimante éteinte ou hors de portée ?"}", e)
         }
         try {
-            block(printer)
+            block(printer, commands)
         } finally {
             printer.disconnectPrinter()
         }
@@ -127,10 +128,14 @@ class PrinterEngine(private val context: Context) {
         }
     }
 
-    /** Avance le papier et coupe (si activé) après une image ou un PDF. */
-    private fun finish(printer: EscPosPrinter) {
-        if (settings.autoCut) printer.printFormattedTextAndCut("[L]\n", FEED_MM)
-        else printer.printFormattedText("[L]\n", FEED_MM)
+    /**
+     * Avance le papier et coupe (si activé) après une image ou un PDF.
+     * Commandes brutes uniquement : une ligne de texte vide serait remplie d'espaces par la
+     * librairie, et certains firmwares les impriment soulignés (traits parasites en bas).
+     */
+    private fun finish(commands: Commands) {
+        commands.feedPaper(FEED_DOTS)
+        if (settings.autoCut) commands.cutPaper()
     }
 
     /**
@@ -159,5 +164,6 @@ class PrinterEngine(private val context: Context) {
         const val IMAGE_CHUNK_HEIGHT = 256
         const val PDF_OVERSAMPLE = 2
         const val FEED_MM = 15f
+        val FEED_DOTS = (FEED_MM * PRINTER_DPI / 25.4f).toInt() // ≈ 120 points
     }
 }
