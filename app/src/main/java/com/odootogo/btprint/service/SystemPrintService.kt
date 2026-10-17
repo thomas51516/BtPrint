@@ -121,8 +121,19 @@ class SystemPrintService : PrintService() {
                 .addResolution(PrintAttributes.Resolution("203dpi", "203 dpi", DPI, DPI), true)
                 .setColorModes(PrintAttributes.COLOR_MODE_MONOCHROME, PrintAttributes.COLOR_MODE_MONOCHROME)
                 .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-            TICKET_LENGTHS_MM.forEach { lengthMm ->
-                caps.addMediaSize(mediaSize(paper, lengthMm), lengthMm == DEFAULT_LENGTH_MM)
+            // Formats 1:1 (largeur utile réelle) puis, pour les petites têtes, des formats
+            // « réduits » : la page est déclarée plus large (reçus Odoo pensés pour 80 mm) et
+            // l'app la réduit à la largeur de tête à l'impression.
+            val layouts = buildList {
+                add(paper.widthMm to "")
+                PaperWidth.entries.filter { it.widthMm > paper.widthMm }
+                    .forEach { wider -> add(wider.widthMm to " (réduit depuis ${wider.label})") }
+            }
+            layouts.forEach { (layoutWidthMm, suffix) ->
+                TICKET_LENGTHS_MM.forEach { lengthMm ->
+                    val isDefault = suffix.isEmpty() && lengthMm == DEFAULT_LENGTH_MM
+                    caps.addMediaSize(mediaSize(paper, layoutWidthMm, lengthMm, suffix), isDefault)
+                }
             }
             return PrinterInfo.Builder(id, name, PrinterInfo.STATUS_IDLE)
                 .setDescription("Bluetooth ESC/POS · ${paper.label}")
@@ -130,13 +141,13 @@ class SystemPrintService : PrintService() {
                 .build()
         }
 
-        /** Largeur = zone imprimable (pas de mise à l'échelle), longueur au choix de l'utilisateur. */
-        private fun mediaSize(paper: PaperWidth, lengthMm: Int) = PrintAttributes.MediaSize(
-            "btprint_${paper.name}_$lengthMm",
-            "Ticket ${paper.label} × $lengthMm mm",
-            mmToMils(paper.widthMm),
-            mmToMils(lengthMm.toFloat())
-        )
+        private fun mediaSize(paper: PaperWidth, layoutWidthMm: Float, lengthMm: Int, suffix: String) =
+            PrintAttributes.MediaSize(
+                "btprint_${paper.name}_${layoutWidthMm.toInt()}_$lengthMm",
+                "Ticket ${paper.label}$suffix × $lengthMm mm",
+                mmToMils(layoutWidthMm),
+                mmToMils(lengthMm.toFloat())
+            )
 
         private fun mmToMils(mm: Float): Int = (mm * 1000f / 25.4f).toInt()
     }
