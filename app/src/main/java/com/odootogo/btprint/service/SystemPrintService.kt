@@ -121,13 +121,13 @@ class SystemPrintService : PrintService() {
                 .addResolution(PrintAttributes.Resolution("203dpi", "203 dpi", DPI, DPI), true)
                 .setColorModes(PrintAttributes.COLOR_MODE_MONOCHROME, PrintAttributes.COLOR_MODE_MONOCHROME)
                 .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-            // Formats 1:1 (largeur utile réelle) puis, pour les petites têtes, des formats
-            // « réduits » : la page est déclarée plus large (reçus Odoo pensés pour 80 mm) et
-            // l'app la réduit à la largeur de tête à l'impression.
+            // Format 1:1 (largeur utile réelle) puis des formats « réduits » : la page est
+            // déclarée plus large (les reçus web, Odoo compris, font souvent ~80 mm) ; l'app
+            // rogne ensuite les marges blanches et réduit à la largeur de tête à l'impression.
             val layouts = buildList {
                 add(paper.widthMm to "")
-                PaperWidth.entries.filter { it.widthMm > paper.widthMm }
-                    .forEach { wider -> add(wider.widthMm to " (réduit depuis ${wider.label})") }
+                REDUCED_LAYOUTS_MM.filter { it > paper.widthMm }
+                    .forEach { wide -> add(wide.toFloat() to " (réduit depuis $wide mm)") }
             }
             layouts.forEach { (layoutWidthMm, suffix) ->
                 TICKET_LENGTHS_MM.forEach { lengthMm ->
@@ -156,6 +156,7 @@ class SystemPrintService : PrintService() {
         const val TAG = "SystemPrintService"
         const val DPI = 203
         val TICKET_LENGTHS_MM = listOf(100, 200, 300)
+        val REDUCED_LAYOUTS_MM = listOf(80, 100)
         const val DEFAULT_LENGTH_MM = 200
     }
 }

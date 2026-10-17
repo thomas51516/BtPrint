@@ -48,7 +48,7 @@ class PrinterEngine(private val context: Context) {
 
             is PrintJob.PdfFile -> withPrinter { printer ->
                 ImageUtils.renderPdfPages(context, job.uri, printer.printerWidthPx) { page ->
-                    printBitmap(printer, ImageUtils.trimVertical(page))
+                    printBitmap(printer, ImageUtils.trim(page))
                 }
                 finish(printer)
             }

@@ -57,6 +57,8 @@ JAVA_HOME=~/.jdks/jbr-21.0.11 ./gradlew :app:lintDebug          # lint Android
 6. Pour imprimer depuis le menu **Imprimer** des autres apps : bouton **Services d'impression**
    (ou *Paramètres → Impression*), activer **BT Print**. L'imprimante sélectionnée dans l'app
    apparaît alors dans la fenêtre d'impression, avec des formats « Ticket 58 mm × 100/200/300 mm ».
+   Si le contenu est coupé à droite (reçu Odoo), choisir un format « réduit depuis 80 mm » ou
+   « réduit depuis 100 mm » : la page est plus large, puis réduite à l'impression.
 
 > **Accents** : si « é » ou « € » sortent mal, changer l'encodage (WPC1252 → PC858 → PC850).
 > La table exacte dépend du firmware de l'imprimante.
@@ -93,6 +95,8 @@ Le service d'impression système reçoit du système un PDF déjà mis en page �
 et l'envoie directement à `PrinterEngine` (les deux chemins sont sérialisés sur la même imprimante).
 Les images et PDF sont redimensionnés à la largeur de tête (384 px en 58 mm, 576 px en 80 mm),
 tramés en noir et blanc, puis envoyés par bandes de 256 px pour ne pas saturer le buffer.
+Les pages PDF sont d'abord rognées de leurs marges blanches (haut, bas, côtés) : un reçu web
+mis en page pour 80 mm occupe ainsi toute la largeur d'une tête 58 mm, en réduction.
 
 ## 4. API HTTP locale
 
