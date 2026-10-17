@@ -129,9 +129,12 @@ class SystemPrintService : PrintService() {
                 REDUCED_LAYOUTS_MM.filter { it > paper.widthMm }
                     .forEach { wide -> add(wide.toFloat() to " (réduit depuis $wide mm)") }
             }
+            // Défaut : page de 80 mm × 300 mm. Les reçus web (Odoo) sont mis en page pour ~80 mm
+            // et tiennent alors en entier sur une page ; l'app rogne les marges et réduit à la
+            // tête. Important sur les anciens Android où le choix du format est parfois inopérant.
             layouts.forEach { (layoutWidthMm, suffix) ->
                 TICKET_LENGTHS_MM.forEach { lengthMm ->
-                    val isDefault = suffix.isEmpty() && lengthMm == DEFAULT_LENGTH_MM
+                    val isDefault = layoutWidthMm.toInt() == DEFAULT_LAYOUT_MM && lengthMm == DEFAULT_LENGTH_MM
                     caps.addMediaSize(mediaSize(paper, layoutWidthMm, lengthMm, suffix), isDefault)
                 }
             }
@@ -143,7 +146,9 @@ class SystemPrintService : PrintService() {
 
         private fun mediaSize(paper: PaperWidth, layoutWidthMm: Float, lengthMm: Int, suffix: String) =
             PrintAttributes.MediaSize(
-                "btprint_${paper.name}_${layoutWidthMm.toInt()}_$lengthMm",
+                // Préfixe versionné : Android mémorise le dernier format par identifiant ;
+                // le changer force la reprise du nouveau défaut.
+                "btp2_${paper.name}_${layoutWidthMm.toInt()}_$lengthMm",
                 "Ticket ${paper.label}$suffix × $lengthMm mm",
                 mmToMils(layoutWidthMm),
                 mmToMils(lengthMm.toFloat())
@@ -157,6 +162,7 @@ class SystemPrintService : PrintService() {
         const val DPI = 203
         val TICKET_LENGTHS_MM = listOf(100, 200, 300)
         val REDUCED_LAYOUTS_MM = listOf(80, 100)
-        const val DEFAULT_LENGTH_MM = 200
+        const val DEFAULT_LAYOUT_MM = 80
+        const val DEFAULT_LENGTH_MM = 300
     }
 }
