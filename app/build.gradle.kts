@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -18,13 +19,30 @@ android {
         versionName = "1.0.0"
     }
 
+    // Signature de release : lue dans keystore.properties (hors dépôt, voir README § 1).
+    // Sans ce fichier, la release reste non signée (Android Studio peut la signer manuellement).
+    val keystoreProperties = rootProject.file("keystore.properties")
+    if (keystoreProperties.exists()) {
+        val props = Properties().apply { keystoreProperties.inputStream().use { load(it) } }
+        signingConfigs {
+            create("release") {
+                storeFile = file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 

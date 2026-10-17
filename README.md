@@ -19,7 +19,23 @@ Librairie d'impression : [DantSu/ESCPOS-ThermalPrinter-Android](https://github.c
    Si Android Studio propose de mettre à jour AGP / Kotlin / Compose BOM, vous pouvez accepter.
 4. Brancher un téléphone Android 12+ et lancer *Run*.
 
-APK de production : *Build → Generate Signed App Bundle / APK*.
+### APK de production (signé)
+
+La release est signée automatiquement si un fichier `keystore.properties` existe à la racine
+du projet (il est ignoré par git) :
+
+```properties
+storeFile=/chemin/vers/btprint-release.jks
+storePassword=…
+keyAlias=btprint
+keyPassword=…
+```
+
+Puis `./gradlew :app:assembleRelease` produit `app/build/outputs/apk/release/app-release.apk`
+(environ 2 Mo, minifié par R8). Sans ce fichier, passer par *Build → Generate Signed App Bundle / APK*.
+
+> **Conserver le keystore et ses mots de passe en lieu sûr.** Toute mise à jour de l'app doit
+> être signée avec la même clé, sinon Android refuse d'installer par-dessus la version existante.
 
 En ligne de commande (JDK 17 ou 21 requis, par ex. celui d'Android Studio) :
 
