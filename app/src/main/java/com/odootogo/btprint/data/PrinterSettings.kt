@@ -2,6 +2,7 @@ package com.odootogo.btprint.data
 
 import android.content.Context
 import androidx.core.content.edit
+import java.nio.charset.Charset
 
 /** Largeur de papier : largeur imprimable (mm) et nombre de caractères par ligne (police A). */
 enum class PaperWidth(val label: String, val widthMm: Float, val charsPerLine: Int, val widthPx: Int) {
@@ -16,7 +17,18 @@ enum class PaperWidth(val label: String, val widthMm: Float, val charsPerLine: I
 enum class PrinterCharset(val label: String, val javaName: String, val escPosCode: Int) {
     WPC1252("Windows-1252 (WPC1252)", "windows-1252", 16),
     PC858("PC858 (accents + €)", "IBM00858", 19),
-    PC850("PC850 (multilingue)", "IBM850", 2)
+    PC850("PC850 (multilingue)", "IBM850", 2);
+
+    /** La table Java existe-t-elle sur cet appareil ? (Android n'embarque pas toutes les tables IBM.) */
+    val isAvailable: Boolean get() = runCatching { Charset.isSupported(javaName) }.getOrDefault(false)
+
+    companion object {
+        /** Repli toujours disponible sur Android. */
+        val DEFAULT = WPC1252
+
+        /** Tables réellement utilisables sur cet appareil, dans l'ordre de déclaration. */
+        val available: List<PrinterCharset> get() = entries.filter { it.isAvailable }
+    }
 }
 
 class PrinterSettings(context: Context) {
@@ -36,8 +48,14 @@ class PrinterSettings(context: Context) {
         get() = enumOrDefault(prefs.getString(KEY_PAPER, null), PaperWidth.MM58)
         set(value) = prefs.edit { putString(KEY_PAPER, value.name) }
 
+    /**
+     * Table de caractères effective. Si la table enregistrée n'existe pas sur l'appareil,
+     * on replie sur [PrinterCharset.DEFAULT] en bloc (table Java **et** code ESC/POS) :
+     * encoder en Windows-1252 tout en annonçant PC858 à l'imprimante ferait sortir « € » en « Ç ».
+     */
     var charset: PrinterCharset
-        get() = enumOrDefault(prefs.getString(KEY_CHARSET, null), PrinterCharset.WPC1252)
+        get() = enumOrDefault(prefs.getString(KEY_CHARSET, null), PrinterCharset.DEFAULT)
+            .takeIf { it.isAvailable } ?: PrinterCharset.DEFAULT
         set(value) = prefs.edit { putString(KEY_CHARSET, value.name) }
 
     var autoCut: Boolean

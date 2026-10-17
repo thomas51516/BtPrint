@@ -192,7 +192,7 @@ private fun MainScreen(settings: PrinterSettings) {
 
             Section("Encodage des caractères") {
                 Text("Si les accents s'impriment mal, essayez une autre table.", style = MaterialTheme.typography.bodySmall)
-                PrinterCharset.entries.forEach { option ->
+                PrinterCharset.available.forEach { option ->
                     OptionRow(option == charset, option.label, "ESC t ${option.escPosCode}") {
                         charset = option
                         settings.charset = option

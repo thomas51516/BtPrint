@@ -22,6 +22,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
@@ -39,12 +41,28 @@ class PrintService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        isRunning = true
         engine = PrinterEngine(this)
         createChannel()
         scope.launch {
-            for (job in PrintQueue.jobs) process(job)
+            while (isActive) {
+                process(PrintQueue.jobs.receive())
+                if (shouldStopWhenIdle()) {
+                    stopSelf()
+                    break
+                }
+            }
         }
+    }
+
+    /**
+     * Sans serveur local, le service n'a aucune raison de rester au premier plan une fois
+     * la file vidée. On patiente un peu : l'utilisateur partage souvent plusieurs documents
+     * d'affilée et cela évite de faire clignoter la notification.
+     */
+    private suspend fun shouldStopWhenIdle(): Boolean {
+        if (PrinterSettings(this).serverEnabled) return false
+        delay(IDLE_TIMEOUT_MS)
+        return PrintQueue.isEmpty && !PrinterSettings(this).serverEnabled
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -73,7 +91,6 @@ class PrintService : Service() {
     }
 
     override fun onDestroy() {
-        isRunning = false
         server?.stop()
         server = null
         scope.cancel()
@@ -165,10 +182,7 @@ class PrintService : Service() {
         private const val CHANNEL_ID = "print_service"
         private const val NOTIFICATION_ID = 1001
         private const val ACTION_STOP = "com.odootogo.btprint.STOP"
-
-        @Volatile
-        var isRunning = false
-            private set
+        private const val IDLE_TIMEOUT_MS = 5_000L
 
         /** À appeler depuis le premier plan (activité visible). Relit aussi les réglages du serveur. */
         fun start(context: Context) {

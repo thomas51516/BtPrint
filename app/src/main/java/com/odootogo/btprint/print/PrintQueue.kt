@@ -23,10 +23,14 @@ object PrintQueue {
     fun submit(context: Context, job: PrintJob) {
         channel.trySend(job)
         _status.value = "Ajouté à la file : ${job.label}"
-        // Ne démarre le service que s'il ne tourne pas déjà
-        // (évite un démarrage de service au premier plan depuis l'arrière-plan).
-        if (!PrintService.isRunning) PrintService.start(context.applicationContext)
+        // (Re)démarre le service : il a pu s'arrêter seul (file vide, serveur désactivé).
+        // Les appels viennent toujours d'un contexte autorisé : activité visible, ou serveur
+        // HTTP qui ne tourne que lorsque le service est déjà au premier plan.
+        PrintService.start(context.applicationContext)
     }
+
+    /** Vrai si aucun travail n'attend dans la file. */
+    val isEmpty: Boolean get() = channel.isEmpty
 
     internal fun setStatus(text: String) {
         _status.value = text

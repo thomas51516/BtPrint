@@ -11,7 +11,6 @@ import com.dantsu.escposprinter.EscPosPrinter
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg
 import com.odootogo.btprint.data.PrinterSettings
-import java.nio.charset.Charset
 import kotlin.math.min
 
 class PrintException(message: String, cause: Throwable? = null) : Exception(message, cause)
@@ -75,10 +74,9 @@ class PrinterEngine(private val context: Context) {
     }
 
     private fun charsetEncoding(): EscPosCharsetEncoding {
+        // settings.charset garantit une table disponible (repli cohérent table + code ESC/POS)
         val cs = settings.charset
-        // Repli sur windows-1252 si la table Java n'existe pas sur l'appareil
-        val javaName = if (Charset.isSupported(cs.javaName)) cs.javaName else "windows-1252"
-        return EscPosCharsetEncoding(javaName, cs.escPosCode)
+        return EscPosCharsetEncoding(cs.javaName, cs.escPosCode)
     }
 
     /** Ouvre la connexion, exécute [block], puis ferme toujours la connexion. */
