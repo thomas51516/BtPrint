@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Base64
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import com.odootogo.btprint.print.PrintJob
 import com.odootogo.btprint.print.PrintQueue
@@ -59,7 +60,7 @@ class ShareReceiverActivity : ComponentActivity() {
 
     private fun fromShare(intent: Intent): PrintJob {
         val type = intent.type.orEmpty()
-        val stream = intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        val stream = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
         return when {
             stream == null && type.startsWith("text/") -> {
                 val text = intent.getStringExtra(Intent.EXTRA_TEXT)

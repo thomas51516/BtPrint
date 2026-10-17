@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -72,11 +73,12 @@ class MainActivity : ComponentActivity() {
 
 private data class PairedPrinter(val name: String, val address: String)
 
-private val REQUIRED_PERMISSIONS = arrayOf(
-    Manifest.permission.BLUETOOTH_CONNECT,
-    Manifest.permission.BLUETOOTH_SCAN,
-    Manifest.permission.POST_NOTIFICATIONS
-)
+private val REQUIRED_PERMISSIONS = buildList {
+    add(Manifest.permission.BLUETOOTH_CONNECT)
+    add(Manifest.permission.BLUETOOTH_SCAN)
+    // Permission d'exécution uniquement depuis Android 13
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+}.toTypedArray()
 
 private fun hasBluetoothPermissions(context: Context) =
     listOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN).all {
