@@ -5,11 +5,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.util.Base64
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
+import com.odootogo.btprint.print.Payloads
 import com.odootogo.btprint.print.PrintJob
 import com.odootogo.btprint.print.PrintQueue
 import com.odootogo.btprint.print.TextFormat
@@ -77,24 +77,12 @@ class ShareReceiverActivity : ComponentActivity() {
 
     private fun fromView(intent: Intent): PrintJob {
         val data = intent.data ?: throw IllegalArgumentException("Aucune donnée")
-        if (data.scheme == "btprint") return fromScheme(data)
+        // getSchemeSpecificPart() décode déjà les %XX
+        if (data.scheme == "btprint") return Payloads.linkToJob(data.schemeSpecificPart.orEmpty())
 
         val type = intent.type ?: contentResolver.getType(data)
         if (type == "application/pdf") return PrintJob.PdfFile(copyToCache(data, "pdf"))
         throw IllegalArgumentException("Type non pris en charge : $type")
-    }
-
-    private fun fromScheme(data: Uri): PrintJob {
-        // getSchemeSpecificPart() décode déjà les %XX ; on tolère btprint://...
-        val content = data.schemeSpecificPart.orEmpty().removePrefix("//")
-        return when {
-            content.startsWith("base64,") ->
-                PrintJob.Raw(Base64.decode(content.removePrefix("base64,"), Base64.DEFAULT))
-            content.startsWith("text,") ->
-                PrintJob.FormattedText(content.removePrefix("text,"))
-            content.isNotBlank() -> PrintJob.FormattedText(TextFormat.plain(content))
-            else -> throw IllegalArgumentException("Lien vide")
-        }
     }
 
     private fun copyToCache(uri: Uri, extension: String): Uri {

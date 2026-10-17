@@ -2,8 +2,8 @@ package com.odootogo.btprint.server
 
 import android.content.Context
 import android.net.Uri
-import android.util.Base64
 import com.odootogo.btprint.data.PrinterSettings
+import com.odootogo.btprint.print.Payloads
 import com.odootogo.btprint.print.PrintJob
 import com.odootogo.btprint.print.PrintQueue
 import fi.iki.elonen.NanoHTTPD
@@ -99,12 +99,8 @@ class LocalPrintServer(
         return buffer
     }
 
-    /** Accepte du base64 brut ou une data URL (data:image/png;base64,....). */
-    private fun decodeBase64(body: ByteArray): ByteArray {
-        val text = String(body, Charsets.US_ASCII).trim()
-        val payload = if (text.contains("base64,")) text.substringAfter("base64,") else text
-        return Base64.decode(payload, Base64.DEFAULT)
-    }
+    private fun decodeBase64(body: ByteArray): ByteArray =
+        Payloads.decodeBase64(String(body, Charsets.US_ASCII))
 
     private fun saveTemp(bytes: ByteArray, extension: String): Uri {
         val file = File(context.cacheDir, "job_${System.nanoTime()}.$extension")

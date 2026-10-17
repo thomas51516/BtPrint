@@ -21,6 +21,14 @@ Librairie d'impression : [DantSu/ESCPOS-ThermalPrinter-Android](https://github.c
 
 APK de production : *Build → Generate Signed App Bundle / APK*.
 
+En ligne de commande (JDK 17 ou 21 requis, par ex. celui d'Android Studio) :
+
+```sh
+JAVA_HOME=~/.jdks/jbr-21.0.11 ./gradlew :app:assembleDebug      # APK debug
+JAVA_HOME=~/.jdks/jbr-21.0.11 ./gradlew :app:testDebugUnitTest  # tests unitaires (JVM)
+JAVA_HOME=~/.jdks/jbr-21.0.11 ./gradlew :app:lintDebug          # lint Android
+```
+
 ## 2. Première utilisation
 
 1. Appairer l'imprimante dans **Réglages → Bluetooth** (code PIN souvent `0000` ou `1234`).
@@ -42,6 +50,7 @@ app/src/main/java/com/odootogo/btprint/
 │   ├── PrintQueue.kt             File d'attente globale + statut observable
 │   ├── PrinterEngine.kt          Connexion Bluetooth SPP + envoi via DantSu
 │   ├── ImageUtils.kt             Redimensionnement, tramage Floyd–Steinberg, rendu PDF, rognage
+│   ├── Payloads.kt               Décodage base64 / data URL et liens btprint: (logique pure)
 │   └── TestReceipts.kt           Ticket et image de test
 ├── service/PrintService.kt       Service au premier plan (connectedDevice) : file + serveur
 ├── server/LocalPrintServer.kt    Serveur HTTP NanoHTTPD sur 127.0.0.1

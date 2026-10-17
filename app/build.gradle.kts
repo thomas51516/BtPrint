@@ -63,4 +63,7 @@ dependencies {
 
     // Serveur HTTP local (impression depuis le navigateur / Odoo POS)
     implementation("org.nanohttpd:nanohttpd:2.3.1")
+
+    // Tests unitaires (JVM)
+    testImplementation("junit:junit:4.13.2")
 }
