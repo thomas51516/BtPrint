@@ -47,8 +47,10 @@ class PrinterEngine(private val context: Context) {
             }
 
             is PrintJob.PdfFile -> withPrinter { printer ->
-                ImageUtils.renderPdfPages(context, job.uri, printer.printerWidthPx) { page ->
-                    printBitmap(printer, ImageUtils.trim(page))
+                // Rendu suréchantillonné : après rognage des marges, le contenu est remis à la
+                // largeur de tête ; partir d'une image plus fine évite un texte flou.
+                ImageUtils.renderPdfPages(context, job.uri, printer.printerWidthPx * PDF_OVERSAMPLE) { page ->
+                    printBitmap(printer, ImageUtils.trim(page, margin = 8 * PDF_OVERSAMPLE))
                 }
                 finish(printer)
             }
@@ -155,6 +157,7 @@ class PrinterEngine(private val context: Context) {
         val CANCEL_CHINESE_MODE = byteArrayOf(0x1C, 0x2E) // FS .
         const val PRINTER_DPI = 203          // valeur standard des imprimantes thermiques
         const val IMAGE_CHUNK_HEIGHT = 256
+        const val PDF_OVERSAMPLE = 2
         const val FEED_MM = 15f
     }
 }
