@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BT Print</string>
+    <string name="share_label">Imprimer (Bluetooth)</string>
+    <string name="notif_channel">Service d\'impression</string>
+</resources>
