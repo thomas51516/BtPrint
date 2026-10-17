@@ -76,5 +76,20 @@
             android:name=".service.PrintService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+
+        <!-- Service d'impression système : BT Print dans la fenêtre « Imprimer » d'Android.
+             À activer une fois dans Paramètres → Impression. -->
+        <service
+            android:name=".service.SystemPrintService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_PRINT_SERVICE">
+            <intent-filter>
+                <action android:name="android.printservice.PrintService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.printservice"
+                android:resource="@xml/printservice" />
+        </service>
     </application>
 </manifest>

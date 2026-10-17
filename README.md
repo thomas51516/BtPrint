@@ -3,6 +3,8 @@
 Application Android (Kotlin, **Android 12 minimum**, minSdk 31) qui imprime sur des imprimantes thermiques
 Bluetooth ESC/POS (Xprinter, Goojprt, MTP, Sunmi externes, etc.) depuis :
 
+- la fenêtre **Imprimer** d'Android (Chrome, lecteurs PDF, Odoo dans le navigateur) via un
+  service d'impression système, comme RawBT ;
 - le menu **Partager** d'Android (PDF, images, texte) et « Ouvrir avec » pour les PDF ;
 - des liens **`btprint:`** cliqués dans une page web ;
 - un **serveur HTTP local** (`http://127.0.0.1:8085`) appelé par un navigateur ou une PWA (Odoo POS).
@@ -52,6 +54,9 @@ JAVA_HOME=~/.jdks/jbr-21.0.11 ./gradlew :app:lintDebug          # lint Android
 3. Choisir l'imprimante, la largeur de papier (58 / 80 mm), l'encodage.
 4. Bouton **Ticket test** : vérifie alignements, accents, code-barres, QR code.
 5. Bouton **Image test** : vérifie le rendu image et le tramage.
+6. Pour imprimer depuis le menu **Imprimer** des autres apps : bouton **Services d'impression**
+   (ou *Paramètres → Impression*), activer **BT Print**. L'imprimante sélectionnée dans l'app
+   apparaît alors dans la fenêtre d'impression, avec des formats « Ticket 58 mm × 100/200/300 mm ».
 
 > **Accents** : si « é » ou « € » sortent mal, changer l'encodage (WPC1252 → PC858 → PC850).
 > La table exacte dépend du firmware de l'imprimante.
@@ -68,7 +73,9 @@ app/src/main/java/com/odootogo/btprint/
 │   ├── ImageUtils.kt             Redimensionnement, tramage Floyd–Steinberg, rendu PDF, rognage
 │   ├── Payloads.kt               Décodage base64 / data URL et liens btprint: (logique pure)
 │   └── TestReceipts.kt           Ticket et image de test
-├── service/PrintService.kt       Service au premier plan (connectedDevice) : file + serveur
+├── service/
+│   ├── PrintService.kt           Service au premier plan (connectedDevice) : file + serveur
+│   └── SystemPrintService.kt     Service d'impression système (fenêtre « Imprimer » d'Android)
 ├── server/LocalPrintServer.kt    Serveur HTTP NanoHTTPD sur 127.0.0.1
 └── ui/
     ├── MainActivity.kt           Écran de configuration (Jetpack Compose)
@@ -77,6 +84,8 @@ app/src/main/java/com/odootogo/btprint/
 
 Fonctionnement : chaque entrée (UI, partage, HTTP) crée un `PrintJob` et le pousse dans `PrintQueue`.
 `PrintService` consomme la file et appelle `PrinterEngine`, qui ouvre la connexion, imprime, puis ferme.
+Le service d'impression système reçoit du système un PDF déjà mis en page à la largeur du ticket
+et l'envoie directement à `PrinterEngine` (les deux chemins sont sérialisés sur la même imprimante).
 Les images et PDF sont redimensionnés à la largeur de tête (384 px en 58 mm, 576 px en 80 mm),
 tramés en noir et blanc, puis envoyés par bandes de 256 px pour ne pas saturer le buffer.
 

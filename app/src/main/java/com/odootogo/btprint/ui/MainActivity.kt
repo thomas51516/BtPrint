@@ -251,6 +251,17 @@ private fun MainScreen(settings: PrinterSettings) {
                 }
             }
 
+            Section("Impression système") {
+                Text(
+                    "Pour imprimer depuis le menu « Imprimer » de Chrome, d'un lecteur PDF ou d'Odoo " +
+                        "dans le navigateur, activez BT Print une fois dans les services d'impression.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedButton(onClick = {
+                    context.startActivity(Intent(Settings.ACTION_PRINT_SETTINGS))
+                }) { Text("Services d'impression") }
+            }
+
             Section("Tests") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(

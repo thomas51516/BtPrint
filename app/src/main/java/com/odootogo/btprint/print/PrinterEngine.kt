@@ -23,7 +23,8 @@ class PrinterEngine(private val context: Context) {
 
     private val settings = PrinterSettings(context)
 
-    fun print(job: PrintJob) {
+    /** Sérialisé : la file et le service d'impression système partagent la même imprimante. */
+    fun print(job: PrintJob) = synchronized(PRINT_LOCK) {
         when (job) {
             is PrintJob.FormattedText -> withPrinter { printer ->
                 if (settings.autoCut) printer.printFormattedTextAndCut(job.text, FEED_MM)
@@ -133,6 +134,7 @@ class PrinterEngine(private val context: Context) {
     }
 
     private companion object {
+        val PRINT_LOCK = Any()
         const val PRINTER_DPI = 203          // valeur standard des imprimantes thermiques
         const val IMAGE_CHUNK_HEIGHT = 256
         const val FEED_MM = 15f
