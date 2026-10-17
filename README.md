@@ -57,8 +57,13 @@ JAVA_HOME=~/.jdks/jbr-21.0.11 ./gradlew :app:lintDebug          # lint Android
 6. Pour imprimer depuis le menu **Imprimer** des autres apps : bouton **Services d'impression**
    (ou *Paramètres → Impression*), activer **BT Print**. L'imprimante sélectionnée dans l'app
    apparaît alors dans la fenêtre d'impression, avec des formats « Ticket 58 mm × 100/200/300 mm ».
-   Si le contenu est coupé à droite (reçu Odoo), choisir un format « réduit depuis 80 mm » ou
-   « réduit depuis 100 mm » : la page est plus large, puis réduite à l'impression.
+   Le format par défaut « réduit depuis 80 mm × 300 mm » convient aux reçus web (Odoo) : page
+   entière, marges rognées, remise à la largeur de tête. Les formats 1:1 servent aux documents
+   déjà mis en page à la largeur du ticket.
+   **La largeur choisie dans l'app doit être celle du rouleau** (58 ou 80 mm) : avec 80 mm sur un
+   rouleau de 58 mm, le côté droit est coupé.
+   Sur certains téléphones Android 8, le sélecteur de taille reste grisé dans la fenêtre
+   d'impression (cause non identifiée) ; le format par défaut s'applique alors de lui-même.
 
 > **Accents** : si « é » ou « € » sortent mal, changer l'encodage (WPC1252 → PC858 → PC850).
 > La table exacte dépend du firmware de l'imprimante.
