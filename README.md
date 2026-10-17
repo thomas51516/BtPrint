@@ -60,6 +60,11 @@ JAVA_HOME=~/.jdks/jbr-21.0.11 ./gradlew :app:lintDebug          # lint Android
 
 > **Accents** : si « é » ou « € » sortent mal, changer l'encodage (WPC1252 → PC858 → PC850).
 > La table exacte dépend du firmware de l'imprimante.
+>
+> **Idéogrammes à la place des accents** (« Caf妹e ») : l'imprimante est en mode caractères chinois.
+> L'app envoie automatiquement la commande `FS .` qui l'annule au début de chaque ticket.
+>
+> **Lignes coupées en deux** : la largeur choisie (80 mm) est supérieure à celle de l'imprimante (58 mm).
 
 ## 3. Structure du projet
 

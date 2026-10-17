@@ -6,6 +6,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import com.dantsu.escposprinter.EscPosCharsetEncoding
 import com.dantsu.escposprinter.EscPosPrinter
+import com.dantsu.escposprinter.EscPosPrinterCommands
+import com.dantsu.escposprinter.connection.DeviceConnection
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg
 import com.odootogo.btprint.data.PrinterSettings
@@ -81,7 +83,7 @@ class PrinterEngine(private val context: Context) {
         val paper = settings.paperWidth
         val printer = try {
             // Le constructeur établit la connexion Bluetooth
-            EscPosPrinter(openConnection(), PRINTER_DPI, paper.widthMm, paper.charsPerLine, charsetEncoding())
+            EscPosPrinter(Commands(openConnection(), charsetEncoding()), PRINTER_DPI, paper.widthMm, paper.charsPerLine)
         } catch (e: PrintException) {
             throw e
         } catch (e: Exception) {
@@ -129,8 +131,28 @@ class PrinterEngine(private val context: Context) {
         else printer.printFormattedText("[L]\n", FEED_MM)
     }
 
+    /**
+     * Commandes ESC/POS de la librairie, avec un correctif pour les imprimantes chinoises
+     * (Xprinter, Goojprt, Scangle…) : elles démarrent en mode « caractères chinois » (GBK), où
+     * chaque octet accentué est lu comme le début d'un caractère sur deux octets et avale la
+     * lettre suivante (« Café » → « Caf妹 »). La librairie envoie ESC @ (reset) au début de chaque
+     * ticket, ce qui réactive ce mode : on envoie donc FS . (annuler le mode chinois) juste après.
+     * Sans effet sur les imprimantes qui n'ont pas ce mode.
+     */
+    private class Commands(
+        private val connection: DeviceConnection,
+        encoding: EscPosCharsetEncoding
+    ) : EscPosPrinterCommands(connection, encoding) {
+        override fun reset(): EscPosPrinterCommands {
+            super.reset()
+            connection.write(CANCEL_CHINESE_MODE)
+            return this
+        }
+    }
+
     private companion object {
         val PRINT_LOCK = Any()
+        val CANCEL_CHINESE_MODE = byteArrayOf(0x1C, 0x2E) // FS .
         const val PRINTER_DPI = 203          // valeur standard des imprimantes thermiques
         const val IMAGE_CHUNK_HEIGHT = 256
         const val FEED_MM = 15f

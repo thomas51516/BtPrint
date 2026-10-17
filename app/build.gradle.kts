@@ -15,8 +15,8 @@ android {
         applicationId = "com.odootogo.btprint"
         minSdk = 26          // Android 8 minimum
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.2.1"
     }
 
     // Signature de release : lue dans keystore.properties (hors dépôt, voir README § 1).

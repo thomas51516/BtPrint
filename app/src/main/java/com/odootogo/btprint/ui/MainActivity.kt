@@ -188,6 +188,10 @@ private fun MainScreen(settings: PrinterSettings) {
             }
 
             Section("Papier") {
+                Text(
+                    "Si les lignes sortent coupées en deux, choisissez la largeur inférieure.",
+                    style = MaterialTheme.typography.bodySmall
+                )
                 PaperWidth.entries.forEach { option ->
                     OptionRow(option == paper, option.label, "${option.charsPerLine} caractères / ligne") {
                         paper = option
