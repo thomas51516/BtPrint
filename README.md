@@ -36,6 +36,10 @@ keyPassword=…
 Puis `./gradlew :app:assembleRelease` produit `app/build/outputs/apk/release/app-release.apk`
 (environ 2 Mo, minifié par R8). Sans ce fichier, passer par *Build → Generate Signed App Bundle / APK*.
 
+Pour Google Play, produire un App Bundle : `./gradlew :app:bundleRelease`
+→ `app/build/outputs/bundle/release/app-release.aab` (même signature). Incrémenter `versionCode`
+à chaque envoi.
+
 > **Conserver le keystore et ses mots de passe en lieu sûr.** Toute mise à jour de l'app doit
 > être signée avec la même clé, sinon Android refuse d'installer par-dessus la version existante.
 
