@@ -10,6 +10,7 @@ import fi.iki.elonen.NanoHTTPD
 import org.json.JSONObject
 import java.io.DataInputStream
 import java.io.File
+import java.security.MessageDigest
 
 /**
  * Serveur HTTP sur 127.0.0.1 (jamais exposé au réseau) pour imprimer depuis
@@ -20,6 +21,10 @@ import java.io.File
  *   POST /print/raw     octets ESC/POS en base64
  *   POST /print/image   image (PNG/JPEG) en base64 ou data URL
  *   POST /print/pdf     PDF en base64 ou data URL
+ *
+ * Les routes POST exigent le jeton de l'app (réglages), transmis dans l'en-tête
+ * `X-Print-Token` ou le paramètre `?token=`. Sans lui, n'importe quelle page ou
+ * application du téléphone pourrait imprimer (et ouvrir un tiroir-caisse).
  */
 class LocalPrintServer(
     private val context: Context,
@@ -45,6 +50,9 @@ class LocalPrintServer(
         if (session.method != Method.POST) {
             return json(Response.Status.METHOD_NOT_ALLOWED, ok = false, message = "Méthode non autorisée")
         }
+        if (!isAuthorized(session)) {
+            return json(Response.Status.UNAUTHORIZED, ok = false, message = "Jeton manquant ou invalide (en-tête X-Print-Token)")
+        }
 
         val body = readBody(session)
         val job = when (path) {
@@ -68,8 +76,18 @@ class LocalPrintServer(
             .put("address", settings.printerAddress ?: JSONObject.NULL)
             .put("paper", settings.paperWidth.label)
             .put("widthPx", settings.paperWidth.widthPx)
+            .put("tokenRequired", settings.tokenRequired)
             .put("status", PrintQueue.status.value)
         return newFixedLengthResponse(Response.Status.OK, "application/json", payload.toString())
+    }
+
+    private fun isAuthorized(session: IHTTPSession): Boolean {
+        val settings = PrinterSettings(context)
+        if (!settings.tokenRequired) return true
+        val provided = session.headers[TOKEN_HEADER.lowercase()]
+            ?: session.parameters["token"]?.firstOrNull()
+            ?: return false
+        return tokenMatches(provided, settings.serverToken)
     }
 
     private fun readBody(session: IHTTPSession): ByteArray {
@@ -104,12 +122,17 @@ class LocalPrintServer(
     private fun cors(response: Response): Response = response.apply {
         addHeader("Access-Control-Allow-Origin", "*")
         addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        addHeader("Access-Control-Allow-Headers", "Content-Type")
+        addHeader("Access-Control-Allow-Headers", "Content-Type, $TOKEN_HEADER")
         addHeader("Access-Control-Allow-Private-Network", "true")
         addHeader("Access-Control-Max-Age", "600")
     }
 
-    private companion object {
-        const val MAX_BODY_BYTES = 20L * 1024 * 1024 // 20 Mo
+    companion object {
+        const val TOKEN_HEADER = "X-Print-Token"
+        private const val MAX_BODY_BYTES = 20L * 1024 * 1024 // 20 Mo
+
+        /** Comparaison en temps constant (évite de deviner le jeton octet par octet). */
+        fun tokenMatches(provided: String, expected: String): Boolean =
+            MessageDigest.isEqual(provided.trim().toByteArray(), expected.toByteArray())
     }
 }

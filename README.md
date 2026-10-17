@@ -60,6 +60,10 @@ tramés en noir et blanc, puis envoyés par bandes de 256 px pour ne pas saturer
 Le serveur écoute uniquement sur `127.0.0.1` (non accessible depuis le réseau).
 Toutes les réponses incluent les en-têtes CORS et `Access-Control-Allow-Private-Network`.
 
+**Jeton** : les routes `POST` exigent le jeton affiché dans l'écran de réglages (bouton *Copier*),
+dans l'en-tête `X-Print-Token` ou le paramètre `?token=`. Réponse sans jeton : `401 {"ok":false,…}`.
+L'exigence peut être désactivée dans les réglages (déconseillé hors d'une caisse dédiée).
+
 | Méthode | Route          | Corps                                                  |
 |---------|----------------|--------------------------------------------------------|
 | GET     | `/status`      | —  (renvoie imprimante, papier, statut)                |
@@ -69,26 +73,25 @@ Toutes les réponses incluent les en-têtes CORS et `Access-Control-Allow-Privat
 | POST    | `/print/pdf`   | PDF en base64 ou data URL                              |
 
 Réponse : `202 {"ok":true,"message":"Travail ajouté à la file"}`.
+`GET /status` renvoie aussi `"tokenRequired": true|false`.
 
 ### Exemple JavaScript (depuis une page web sur le téléphone)
 
 ```js
 const BT_PRINT = "http://127.0.0.1:8085";
+const TOKEN = "…"; // jeton copié depuis l'app
+const headers = { "Content-Type": "text/plain", "X-Print-Token": TOKEN };
 
 // Texte formaté
 await fetch(`${BT_PRINT}/print/text`, {
   method: "POST",
-  headers: { "Content-Type": "text/plain" },
+  headers,
   body: "[C]<b>MA BOUTIQUE</b>\n[L]Article[R]1 500 FCFA\n",
 });
 
 // Image (ex. ticket rendu dans un <canvas>)
 const dataUrl = canvas.toDataURL("image/png");
-await fetch(`${BT_PRINT}/print/image`, {
-  method: "POST",
-  headers: { "Content-Type": "text/plain" },
-  body: dataUrl,
-});
+await fetch(`${BT_PRINT}/print/image`, { method: "POST", headers, body: dataUrl });
 ```
 
 ### Syntaxe du texte formaté (DantSu)
@@ -127,7 +130,7 @@ en `POST /print/image` vers `http://127.0.0.1:8085`. Le POS étant en HTTPS :
 
 - Imprimantes Bluetooth **Classic (SPP)** uniquement ; les modèles BLE-only demandent un transport GATT dédié.
 - Les imprimantes **Star** (protocole StarPRNT) ne sont pas compatibles ESC/POS.
-- Le serveur local accepte toute page ouverte sur le téléphone : ajouter un jeton
-  (`X-Print-Token`) si l'appareil sert à autre chose qu'une caisse.
+- Le jeton protège contre les pages et applications tierces du téléphone, pas contre
+  quelqu'un qui a l'appareil en main (le jeton est lisible dans les réglages).
 - Idées : choix du port dans l'UI, plusieurs imprimantes (cuisine / caisse), tiroir-caisse
   (`printFormattedTextAndOpenCashBox`), réimpression du dernier ticket, impression TCP (port 9100).

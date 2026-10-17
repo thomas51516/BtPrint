@@ -3,6 +3,7 @@ package com.odootogo.btprint.data
 import android.content.Context
 import androidx.core.content.edit
 import java.nio.charset.Charset
+import java.security.SecureRandom
 
 /** Largeur de papier : largeur imprimable (mm) et nombre de caractères par ligne (police A). */
 enum class PaperWidth(val label: String, val widthMm: Float, val charsPerLine: Int, val widthPx: Int) {
@@ -70,11 +71,37 @@ class PrinterSettings(context: Context) {
         get() = prefs.getInt(KEY_PORT, DEFAULT_PORT)
         set(value) = prefs.edit { putInt(KEY_PORT, value) }
 
+    /** Exiger le jeton sur les routes POST du serveur local (recommandé). */
+    var tokenRequired: Boolean
+        get() = prefs.getBoolean(KEY_TOKEN_REQUIRED, true)
+        set(value) = prefs.edit { putBoolean(KEY_TOKEN_REQUIRED, value) }
+
+    /** Jeton du serveur local, généré à la première lecture. */
+    val serverToken: String
+        get() = prefs.getString(KEY_TOKEN, null) ?: regenerateToken()
+
+    fun regenerateToken(): String {
+        val token = newToken()
+        prefs.edit { putString(KEY_TOKEN, token) }
+        return token
+    }
+
     private inline fun <reified T : Enum<T>> enumOrDefault(name: String?, default: T): T =
         name?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: default
 
     companion object {
         const val DEFAULT_PORT = 8085
+        private const val TOKEN_LENGTH = 24
+        private const val TOKEN_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+
+        /** Jeton aléatoire lisible (sans caractères ambigus : 0/O, 1/l/I). */
+        fun newToken(): String {
+            val random = SecureRandom()
+            return buildString(TOKEN_LENGTH) {
+                repeat(TOKEN_LENGTH) { append(TOKEN_ALPHABET[random.nextInt(TOKEN_ALPHABET.length)]) }
+            }
+        }
+
         private const val KEY_ADDRESS = "address"
         private const val KEY_NAME = "name"
         private const val KEY_PAPER = "paper"
@@ -82,5 +109,7 @@ class PrinterSettings(context: Context) {
         private const val KEY_CUT = "auto_cut"
         private const val KEY_SERVER = "server_enabled"
         private const val KEY_PORT = "server_port"
+        private const val KEY_TOKEN = "server_token"
+        private const val KEY_TOKEN_REQUIRED = "server_token_required"
     }
 }

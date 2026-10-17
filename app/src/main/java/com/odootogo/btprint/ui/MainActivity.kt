@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -48,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.odootogo.btprint.data.PaperWidth
@@ -56,6 +59,7 @@ import com.odootogo.btprint.data.PrinterSettings
 import com.odootogo.btprint.print.PrintJob
 import com.odootogo.btprint.print.PrintQueue
 import com.odootogo.btprint.print.TestReceipts
+import com.odootogo.btprint.server.LocalPrintServer
 import com.odootogo.btprint.service.PrintService
 
 class MainActivity : ComponentActivity() {
@@ -103,6 +107,8 @@ private fun MainScreen(settings: PrinterSettings) {
     var charset by remember { mutableStateOf(settings.charset) }
     var autoCut by remember { mutableStateOf(settings.autoCut) }
     var serverEnabled by remember { mutableStateOf(settings.serverEnabled) }
+    var tokenRequired by remember { mutableStateOf(settings.tokenRequired) }
+    var token by remember { mutableStateOf(settings.serverToken) }
     val status by PrintQueue.status.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -217,6 +223,31 @@ private fun MainScreen(settings: PrinterSettings) {
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
+                    HorizontalDivider()
+                    SwitchRow("Exiger un jeton (en-tête ${LocalPrintServer.TOKEN_HEADER})", tokenRequired) {
+                        tokenRequired = it
+                        settings.tokenRequired = it
+                    }
+                    if (tokenRequired) {
+                        Text(
+                            "À renseigner dans la page ou le module Odoo qui appelle le serveur.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(token, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = {
+                                context.getSystemService(ClipboardManager::class.java)
+                                    .setPrimaryClip(ClipData.newPlainText("BT Print token", token))
+                            }) { Text("Copier") }
+                            TextButton(onClick = { token = settings.regenerateToken() }) { Text("Régénérer") }
+                        }
+                    } else {
+                        Text(
+                            "Sans jeton, toute page ou application du téléphone peut imprimer.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
 
